@@ -48,6 +48,34 @@ def fetch_flag(country_code):
     except requests.exceptions.RequestException:
         return None
 
+# Función para cargar un icono desde una URL
+def load_icon(url, size=(50, 50)):
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        icon_img = Image.open(BytesIO(response.content))
+        icon_img = icon_img.resize(size)
+        return ImageTk.PhotoImage(icon_img)
+    except requests.exceptions.RequestException:
+        return None
+
+# Función para obtener el icono del clima
+def get_weather_icon(condition):
+    icon_map = {
+        "clear": "https://cdn-icons-png.flaticon.com/512/6974/6974833.png",  # Sol
+        "clouds": "https://i.imgur.com/nz2RLA4.png",  # Nubes
+        "rain": "https://i.imgur.com/hnyjKIA.png",  # Lluvia
+        "snow": "https://cdn-icons-png.flaticon.com/512/2315/2315309.png",  # Nieve
+        "thunderstorm": "https://i.imgur.com/TLOySY1.png",  # Tormenta
+        "drizzle": "https://cdn-icons-png.flaticon.com/512/1163/1163657.png",  # Llovizna
+        "mist": "https://cdn-icons-png.flaticon.com/512/1197/1197102.png",  # Niebla
+    }
+    condition = condition.lower()
+    for key in icon_map:
+        if key in condition:
+            return load_icon(icon_map[key])
+    return load_icon(icon_map["clear"])  # Icono por defecto (sol)
+
 # Función para actualizar la información de la ciudad buscada
 def update_weather_info():
     city = search_entry.get()
@@ -66,10 +94,26 @@ def update_weather_info():
         else:
             flag_label.config(image='')  # Si no se encuentra la bandera
         
+        # Actualizar iconos y valores
+        temp_icon = load_icon("https://cdn-icons-png.flaticon.com/512/7074/7074116.png")  # Termómetro
         temp_label.config(text=f"{weather_info['temp_min']}°C / {weather_info['temp_max']}°C")
+        temp_icon_label.config(image=temp_icon)
+        temp_icon_label.image = temp_icon
+
+        weather_icon = get_weather_icon(weather_info['cond'])
         cond_label.config(text=f"{weather_info['cond']}")
+        cond_icon_label.config(image=weather_icon)
+        cond_icon_label.image = weather_icon
+
+        wind_icon = load_icon("https://cdn-icons-png.flaticon.com/512/11742/11742598.png")  # Viento
         wind_label.config(text=f"{weather_info['viento']} km/h")
+        wind_icon_label.config(image=wind_icon)
+        wind_icon_label.image = wind_icon
+
+        humidity_icon = load_icon("https://cdn-icons-png.flaticon.com/512/1582/1582886.png")  # Humedad
         humidity_label.config(text=f"{weather_info['humedad']}%")
+        humidity_icon_label.config(image=humidity_icon)
+        humidity_icon_label.image = humidity_icon
     else:
         city_label.config(text="Ciudad no encontrada")
         flag_label.config(image='')
@@ -131,27 +175,33 @@ def create_info_frame(parent, title):
 
     label_title = tk.Label(frame, text=title, font=("Arial", 16, "bold"))
     label_title.place(relx=0.5, rely=0.2, anchor="center")  # Título más grande y centrado
+
+    # Etiqueta para el icono
+    icon_label = tk.Label(frame)
+    icon_label.place(relx=0.5, rely=0.45, anchor="center")
+
+    # Etiqueta para el valor
     label_value = tk.Label(frame, text="-", font=("Arial", 20))
-    label_value.place(relx=0.5, rely=0.6, anchor="center")  # Valor más grande y centrado
-    return frame, label_value
+    label_value.place(relx=0.5, rely=0.75, anchor="center")  # Valor más grande y centrado
+    return frame, icon_label, label_value
 
 # Crear los recuadros
 row1 = tk.Frame(info_frame)
 row1.pack(expand=True)
 
-temp_frame, temp_label = create_info_frame(row1, "Temperatura")
+temp_frame, temp_icon_label, temp_label = create_info_frame(row1, "Temperatura")
 temp_frame.pack(side=tk.LEFT, padx=20, pady=20)
 
-cond_frame, cond_label = create_info_frame(row1, "Tiempo")
+cond_frame, cond_icon_label, cond_label = create_info_frame(row1, "Tiempo")
 cond_frame.pack(side=tk.LEFT, padx=20, pady=20)
 
 row2 = tk.Frame(info_frame)
 row2.pack(expand=True)
 
-wind_frame, wind_label = create_info_frame(row2, "Viento")
+wind_frame, wind_icon_label, wind_label = create_info_frame(row2, "Viento")
 wind_frame.pack(side=tk.LEFT, padx=20, pady=20)
 
-humidity_frame, humidity_label = create_info_frame(row2, "Humedad")
+humidity_frame, humidity_icon_label, humidity_label = create_info_frame(row2, "Humedad")
 humidity_frame.pack(side=tk.LEFT, padx=20, pady=20)
 
 # Lista de ciudades predefinidas
