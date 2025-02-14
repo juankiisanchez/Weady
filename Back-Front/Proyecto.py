@@ -1,3 +1,4 @@
+import os
 import tkinter as tk
 from tkinter import ttk
 import requests
@@ -36,7 +37,6 @@ def fetch_weather(city):
 
 # Función para obtener la bandera del país
 def fetch_flag(country_code):
-    # Usar la API de Restcountries para obtener la URL de la bandera
     flag_url = f"https://restcountries.com/v3.1/alpha/{country_code}"
     try:
         response = requests.get(flag_url)
@@ -48,54 +48,83 @@ def fetch_flag(country_code):
     except requests.exceptions.RequestException:
         return None
 
-# Función para cargar un icono desde una URL
-def load_icon(url, size=(50, 50)):
+# Función para cargar un icono desde una URL o ruta local
+def load_icon(source, size=(50, 50)):
     try:
-        response = requests.get(url)
-        response.raise_for_status()
-        icon_img = Image.open(BytesIO(response.content))
-        icon_img = icon_img.resize(size)
-        return ImageTk.PhotoImage(icon_img)
-    except requests.exceptions.RequestException:
+        if source.startswith("http"):
+            response = requests.get(source)
+            response.raise_for_status()
+            img = Image.open(BytesIO(response.content))
+        else:
+            # Construir la ruta absoluta basada en la ubicación del script
+            base_path = os.path.dirname(os.path.abspath(__file__))
+            full_path = os.path.join(base_path, source)
+            img = Image.open(full_path)
+        img = img.resize(size)
+        return ImageTk.PhotoImage(img)
+    except Exception as e:
+        print("Error al cargar la imagen:", e)
         return None
 
-# Función para obtener el icono del clima
+# Función para obtener el icono del estado del tiempo según el texto recibido de la API
 def get_weather_icon(condition):
-    icon_map = {
-        "clear": "https://cdn-icons-png.flaticon.com/512/6974/6974833.png",  # Sol
-        "clouds": "https://i.imgur.com/nz2RLA4.png",  # Nubes
-        "rain": "https://i.imgur.com/hnyjKIA.png",  # Lluvia
-        "snow": "https://cdn-icons-png.flaticon.com/512/2315/2315309.png",  # Nieve
-        "thunderstorm": "https://i.imgur.com/TLOySY1.png",  # Tormenta
-        "drizzle": "https://cdn-icons-png.flaticon.com/512/1163/1163657.png",  # Llovizna
-        "mist": "https://cdn-icons-png.flaticon.com/512/1197/1197102.png",  # Niebla
+    condition = condition.lower().strip()
+    mapping = {
+        "cielo claro": "clear",
+        "nubes": "clouds",
+        "algo de nubes": "clouds",
+        "nubes dispersas": "clouds",
+        "nublado": "clouds",
+        "muy nuboso": "clouds",
+        "lluvia ligera": "rain",
+        "lluvia moderada": "rain",
+        "lluvia intensa": "rain",
+        "tormenta eléctrica": "thunderstorm",
+        "llovizna": "drizzle",
+        "llovizna ligera": "drizzle",
+        "niebla": "mist",
+        "neblina": "mist",
+        "nieve ligera": "snow",
+        "nieve moderada": "snow",
+        "nevada intensa": "snow",
+        "granizo": "thunderstorm"
     }
-    condition = condition.lower()
-    for key in icon_map:
-        if key in condition:
-            return load_icon(icon_map[key])
-    return load_icon(icon_map["clear"])  # Icono por defecto (sol)
+    key = mapping.get(condition, "clear")
+    icon_map = {
+        "clear": "../imagenes/soleado.png",         # Sol
+        "clouds": "../imagenes/nubes.png",            # Nubes
+        "rain": "../imagenes/lluvia.png",              # Lluvia
+        "thunderstorm": "../imagenes/tormenta.png",    # Tormenta
+        "drizzle": "../imagenes/llovizna.png",         # Llovizna
+        "mist": "../imagenes/niebla.png",              # Niebla
+        "snow": "../imagenes/nieve.png"                # Nieve
+    }
+    return load_icon(icon_map[key])
 
 # Función para actualizar la información de la ciudad buscada
 def update_weather_info():
     city = search_entry.get()
     weather_info = fetch_weather(city)
-
     if weather_info:
         city_label.config(text=f"{weather_info['city']}, {weather_info['country']}")
-        
         # Actualizar bandera
         flag_img = fetch_flag(weather_info['country_code'])
         if flag_img:
             flag_img = flag_img.resize((50, 30))  # Ajustar tamaño
             flag_photo = ImageTk.PhotoImage(flag_img)
             flag_label.config(image=flag_photo)
-            flag_label.image = flag_photo  # Para mantener la referencia de la imagen
+            flag_label.image = flag_photo  # Mantener referencia
         else:
-            flag_label.config(image='')  # Si no se encuentra la bandera
+            flag_label.config(image='')
         
         # Actualizar iconos y valores
-        temp_icon = load_icon("https://cdn-icons-png.flaticon.com/512/7074/7074116.png")  # Termómetro
+        # Determinar el icono según la temperatura mínima y máxima
+        if weather_info['temp_min'] > 17:
+            temp_icon = load_icon("../imagenes/alta-temperatura.png")  # Alta temperatura
+        else:
+            temp_icon = load_icon("../imagenes/baja-temperatura.png")  # Baja temperatura
+
+        # Actualizar el texto y el icono en el label
         temp_label.config(text=f"{weather_info['temp_min']}°C / {weather_info['temp_max']}°C")
         temp_icon_label.config(image=temp_icon)
         temp_icon_label.image = temp_icon
@@ -125,8 +154,6 @@ def update_weather_info():
 # Configuración de la ventana principal
 root = tk.Tk()
 root.title("Aplicación del Tiempo")
-
-# Hacer que la ventana se abra maximizada pero con la barra de título visible
 root.state('zoomed')
 
 # Barra de búsqueda
@@ -142,7 +169,7 @@ search_entry.pack(side=tk.LEFT, padx=5)
 search_button = tk.Button(search_frame, text="Buscar", command=update_weather_info)
 search_button.pack(side=tk.LEFT, padx=5)
 
-# Dividir la pantalla
+# Dividir la pantalla en dos secciones: información principal y ciudades predefinidas
 main_frame = tk.Frame(root)
 main_frame.pack(fill=tk.BOTH, expand=True, pady=10, padx=10)
 
@@ -152,40 +179,32 @@ left_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5)
 right_frame = tk.Frame(main_frame, bd=2, relief=tk.SUNKEN)
 right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=5)
 
-# Información de la ciudad buscada en recuadros
+# Información de la ciudad buscada
 info_frame = tk.Frame(left_frame)
 info_frame.pack(expand=True)
 
-# Título de la ciudad seleccionada con la bandera a la izquierda
 city_frame = tk.Frame(info_frame)
 city_frame.pack(pady=10)
 
-# Etiqueta para la bandera
 flag_label = tk.Label(city_frame)
 flag_label.pack(side=tk.LEFT, padx=10)
 
-# Etiqueta para el nombre de la ciudad y el país
 city_label = tk.Label(city_frame, text="Ciudad, País", font=("Arial", 18, "bold"))
 city_label.pack(side=tk.LEFT)
 
-# Configuración de los recuadros con bordes redondeados y sin fondo
+# Función para crear recuadros de información (Temperatura, Tiempo, Viento, Humedad)
 def create_info_frame(parent, title):
-    frame = tk.Frame(parent, bd=2, relief=tk.RAISED, width=400, height=250)  # Tamaño aumentado
-    frame.pack_propagate(False)  # Evitar que el frame cambie su tamaño
-
+    frame = tk.Frame(parent, bd=2, relief=tk.RAISED, width=400, height=250)
+    frame.pack_propagate(False)
     label_title = tk.Label(frame, text=title, font=("Arial", 16, "bold"))
-    label_title.place(relx=0.5, rely=0.2, anchor="center")  # Título más grande y centrado
-
-    # Etiqueta para el icono
+    label_title.place(relx=0.5, rely=0.2, anchor="center")
     icon_label = tk.Label(frame)
     icon_label.place(relx=0.5, rely=0.45, anchor="center")
-
-    # Etiqueta para el valor
     label_value = tk.Label(frame, text="-", font=("Arial", 20))
-    label_value.place(relx=0.5, rely=0.75, anchor="center")  # Valor más grande y centrado
+    label_value.place(relx=0.5, rely=0.75, anchor="center")
     return frame, icon_label, label_value
 
-# Crear los recuadros
+# Crear recuadros de información
 row1 = tk.Frame(info_frame)
 row1.pack(expand=True)
 
@@ -223,11 +242,9 @@ predefined_cities = [
 for city, country in predefined_cities:
     create_city_button(right_frame, city, country)
 
-# Evento para seleccionar ciudad desde la lista
 def select_city(city):
     search_entry.delete(0, tk.END)
     search_entry.insert(0, city)
     update_weather_info()
 
-# Ejecutar la aplicación
 root.mainloop()
