@@ -21,10 +21,9 @@ API_KEY = "13664056350383ee5b2ed74523f41ff1"  # Reemplaza con tu clave de API
 BASE_URL = "http://api.openweathermap.org/data/2.5/weather"
 
 # -------------------------------------------------------------------------
-# Función para oscurecer un color (en formato hexadecimal)
+# Función para oscurecer un color (se usa en la animación)
 # -------------------------------------------------------------------------
 def darken_color(hex_color, factor=0.95):
-    """Devuelve el color hex más oscuro, multiplicando cada componente por 'factor'."""
     hex_color = hex_color.lstrip('#')
     r, g, b = (int(hex_color[i:i+2], 16) for i in (0, 2, 4))
     r = max(0, min(255, int(r * factor)))
@@ -204,19 +203,25 @@ def create_info_canvas(parent, title):
     return canvas, icon_label, label_value
 
 # -------------------------------------------------------------------------
-# 10) Función animate_press: animación al pulsar (reduce tamaño un poco, cambia color y vuelve)
+# 10) Función animate_press: animación al pulsar (reduce tamaño, oscurece y reduce fuente)
 # -------------------------------------------------------------------------
 def animate_press(canvas, center, down_scale=0.95, duration=100, rect_id=None, original_color=None):
-    # Reducir tamaño
+    # Reducir tamaño del botón (todo el canvas)
     canvas.scale("all", center[0], center[1], down_scale, down_scale)
-    # Cambiar color a oscuro
+    # Oscurecer el fondo (si se proporciona rect_id y original_color)
     if rect_id is not None and original_color is not None:
         dark_color = darken_color(original_color, factor=0.95)
         canvas.itemconfig(rect_id, fill=dark_color)
-    # Después de 'duration' milisegundos, restaurar tamaño y color
+    # Reducir también el tamaño de la fuente del texto
+    if hasattr(canvas, "text_id") and hasattr(canvas, "original_font"):
+        font_family, font_size = canvas.original_font
+        smaller_font = (font_family, max(1, int(font_size * down_scale)))
+        canvas.itemconfig(canvas.text_id, font=smaller_font)
+    # Después de 'duration' milisegundos, restaurar tamaño, color y fuente
     canvas.after(duration, lambda: (
         canvas.scale("all", center[0], center[1], 1/down_scale, 1/down_scale),
-        canvas.itemconfig(rect_id, fill=original_color) if rect_id is not None and original_color is not None else None
+        canvas.itemconfig(rect_id, fill=original_color) if rect_id is not None and original_color is not None else None,
+        canvas.itemconfig(canvas.text_id, font=canvas.original_font) if hasattr(canvas, "text_id") else None
     ))
 
 # -------------------------------------------------------------------------
@@ -226,14 +231,18 @@ def create_rounded_button(parent, text, command, width=250, height=40, radius=20
                            bg=BG_PANEL, fg="black", active_bg=BG_PANEL, font=("Shafarik", 12), image=None):
     canvas = tk.Canvas(parent, width=width, height=height, bg=parent.cget("bg"), highlightthickness=0)
     rect = round_rectangle(canvas, 0, 0, width, height, radius=radius, fill=bg, outline="")
-    # Guardamos el color original
     original_color = bg
+    # Guardamos la fuente original en el canvas
+    canvas.original_font = font
     if image is not None:
-        canvas.create_image(10, height//2, image=image, anchor="w")
-        canvas.create_text(10 + image.width() + 5, height//2, text=text, fill=fg, font=font, anchor="w")
-        canvas.image = image
+        # Dibujar la imagen a la izquierda y luego el texto a la derecha
+        img_id = canvas.create_image(10, height//2, image=image, anchor="w")
+        text_id = canvas.create_text(10 + image.width() + 5, height//2, text=text, fill=fg, font=font, anchor="w")
+        canvas.image = image  # Referencia para evitar recolección
     else:
-        canvas.create_text(width//2, height//2, text=text, fill=fg, font=font)
+        text_id = canvas.create_text(width//2, height//2, text=text, fill=fg, font=font)
+    # Guardamos el id del texto para poder modificar su fuente en la animación
+    canvas.text_id = text_id
     def on_click(event):
         center = (width//2, height//2)
         animate_press(canvas, center, down_scale=0.95, duration=100, rect_id=rect, original_color=original_color)
