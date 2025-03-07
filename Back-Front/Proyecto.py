@@ -1,12 +1,15 @@
-import os
-import ctypes
-import tkinter as tk
-import tkinter.ttk as ttk
-import subprocess
-import requests
-import threading
-from PIL import Image, ImageTk, ImageOps
-from io import BytesIO
+import os # funcionalidades dependientes del sistema operativo, como leer o escribir en el sistema de archivos.
+import ctypes # Permite llamar a funciones de bibliotecas dinámicas y manipular estructuras de datos en esos lenguajes.
+import tkinter as tk # Módulo de Python para crear interfaces gráficas
+import tkinter.ttk as ttk # Extensión de 'tkinter' que proporciona widgets (componentes de GUI) estilizados y modernos.
+import subprocess # Permite ejecutar nuevos procesos (comandos del sistema operativo) y obtener sus resultados.
+import requests # Librería para hacer solicitudes HTTP de manera sencilla. Útil para interactuar con APIs web.
+import threading # Proporciona soporte para threads (hilos), permitiendo la ejecución de código en paralelo.
+from PIL import Image, ImageTk, ImageOps # PIL es una librería para abrir, manipular y guardar muchos formatos de imágenes diferentes.
+                                         # `Image` se usa para abrir y manipular imágenes.
+                                         # `ImageTk` se usa para convertir imágenes de PIL a un formato que `tkinter` pueda usar.
+                                         # `ImageOps` contiene operaciones avanzadas de imagen como recorte, cambio de tamaño, etc.
+from io import BytesIO # Permite trabajar con datos binarios en memoria como si fueran un archivo.
 
 # -----------------------------------------------------------------------------
 # DEFINICIÓN DE COLORES
