@@ -12,6 +12,12 @@ db_config = {
     'database': 'weady'  # Asegúrate de que este nombre sea el correcto
 }
 
+# -------------------------------------------------------------------------
+# DEFINICIÓN DE COLORES
+# -------------------------------------------------------------------------
+BG_APP = "#FB8C00"       # Fondo general para la sección izquierda
+BG_PANEL = "#FFCC80"     # Fondo de los recuadros y botones (sección izquierda)
+
 # Cargar el logo
 def load_logo():
     try:
@@ -26,24 +32,25 @@ def load_logo():
 def open_register_window():
     register_window = tk.Toplevel(app)
     register_window.title("Registro")
+    register_window.configure(bg=BG_APP)
 
     logo = load_logo()
     if logo:
-        logo_label = tk.Label(register_window, image=logo)
+        logo_label = tk.Label(register_window, image=logo, bg=BG_APP)
         logo_label.image = logo  # Guardar referencia para evitar que se elimine
         logo_label.grid(row=0, column=0, columnspan=2, pady=10)
 
-    tk.Label(register_window, text="Nombre:").grid(row=1, column=0, pady=5)
+    tk.Label(register_window, text="Nombre:", bg=BG_APP, font=("Shafarik", 12)).grid(row=1, column=0, pady=5, sticky="e")
     entry_name = tk.Entry(register_window)
-    entry_name.grid(row=1, column=1, pady=5)
+    entry_name.grid(row=1, column=1, pady=5, padx=10)
 
-    tk.Label(register_window, text="Email:").grid(row=2, column=0, pady=5)
+    tk.Label(register_window, text="Email:", bg=BG_APP, font=("Shafarik", 12)).grid(row=2, column=0, pady=5, sticky="e")
     entry_email = tk.Entry(register_window)
-    entry_email.grid(row=2, column=1, pady=5)
+    entry_email.grid(row=2, column=1, pady=5, padx=10)
 
-    tk.Label(register_window, text="Contraseña:").grid(row=3, column=0, pady=5)
+    tk.Label(register_window, text="Contraseña:", bg=BG_APP, font=("Shafarik", 12)).grid(row=3, column=0, pady=5, sticky="e")
     entry_password = tk.Entry(register_window, show="*")
-    entry_password.grid(row=3, column=1, pady=5)
+    entry_password.grid(row=3, column=1, pady=5, padx=10)
 
     def register():
         nombre = entry_name.get().strip()
@@ -80,31 +87,32 @@ def open_register_window():
                 conn.close()
             register_window.destroy()
 
-    tk.Button(register_window, text="Registrar", command=register).grid(row=4, column=0, columnspan=2, pady=10)
+    tk.Button(register_window, text="Registrar", command=register, bg=BG_PANEL, font=("Shafarik", 12)).grid(row=4, column=0, columnspan=2, pady=10)
 
 # Ventana principal
 app = tk.Tk()
 app.title("Aplicación de Registro")
+app.configure(bg=BG_APP)
 
 # Cargar y mostrar el logo en la pantalla principal
 logo = load_logo()
 if logo:
-    logo_label = tk.Label(app, image=logo)
+    logo_label = tk.Label(app, image=logo, bg=BG_APP)
     logo_label.image = logo  # Guardar referencia correctamente
     logo_label.pack(pady=10)
 
-frame = tk.Frame(app)
+frame = tk.Frame(app, bg=BG_APP)
 frame.pack(padx=10, pady=10)
 
-tk.Label(frame, text="Usuario:").grid(row=0, column=0, pady=5)
+tk.Label(frame, text="Usuario:", bg=BG_APP, font=("Shafarik", 12)).grid(row=0, column=0, pady=5, sticky="e")
 entry_username = tk.Entry(frame)
-entry_username.grid(row=0, column=1, pady=5)
+entry_username.grid(row=0, column=1, pady=5, padx=10)
 
-tk.Label(frame, text="Contraseña:").grid(row=1, column=0, pady=5)
+tk.Label(frame, text="Contraseña:", bg=BG_APP, font=("Shafarik", 12)).grid(row=1, column=0, pady=5, sticky="e")
 entry_password = tk.Entry(frame, show="*")
-entry_password.grid(row=1, column=1, pady=5)
+entry_password.grid(row=1, column=1, pady=5, padx=10)
 
-tk.Button(frame, text="Registrar", command=open_register_window).grid(row=2, column=0, pady=10)
+tk.Button(frame, text="Registrar", command=open_register_window, bg=BG_PANEL, font=("Shafarik", 12)).grid(row=2, column=0, pady=10)
 
 # Función para iniciar sesión
 def login():
@@ -138,6 +146,6 @@ def login():
         if 'conn' in locals():
             conn.close()
 
-tk.Button(frame, text="Iniciar Sesión", command=login).grid(row=2, column=1, pady=10)
+tk.Button(frame, text="Iniciar Sesión", command=login, bg=BG_PANEL, font=("Shafarik", 12)).grid(row=2, column=1, pady=10)
 
 app.mainloop()
